@@ -1,0 +1,73 @@
+CREATE DATABASE IF NOT EXISTS ngx_logs;
+
+CREATE TABLE ngx_logs.logs_v1_2
+(
+    `remote_addr` String,
+    `remote_addr_int` UInt32 MATERIALIZED IPv4StringToNum(remote_addr),
+    `remote_user` String,
+    `http_x_forwarded_for` String,
+    `time_local` String,
+    `logtime` DateTime,
+    `Date` Date DEFAULT toDate(logtime),
+    `logtimeUnixTimestamp` UInt32 MATERIALIZED toUnixTimestamp(logtime),
+    `request` String,
+    `status` UInt16,
+    `body_bytes_sent` UInt32,
+    `http_referer` String,
+    `http_user_agent` String,
+    `request_time` Float64,
+    `http_Host` String,
+    `server_addr` String,
+    `server_addr_int` UInt32 MATERIALIZED IPv4StringToNum(server_addr),
+    `server_name` String,
+    `upstream_connect_time` Float64,
+    `upstream_header_time` Float64,
+    `upstream_response_time` Float64,
+    `upstream_cache_status` String,
+    `upstream_addr` String,
+    `upstream_addr_int` UInt32 MATERIALIZED IPv4StringToNum(upstream_addr),
+    `upstream_status` String,
+    `gzip_ratio` Float64,
+    `scheme` Enum8('unknown' = 0, 'http' = 1, 'https' = 2),
+    `request_id` String,
+    `request_length` UInt32,
+    `bytes_sent` UInt32,
+    `header_bytes` UInt32 MATERIALIZED bytes_sent - body_bytes_sent,
+    `type` String,
+    `host` String,
+    `host_int` UInt32 MATERIALIZED IPv4StringToNum(host),
+    `logsource` String,
+    `req_method` String,
+    `req_stream_name` String,
+    `req_stream_type` String,
+    `req_server_http` String,
+    `req_stream_part` UInt32,
+    `req_path` String,
+    `req_false` String,
+    `user_agent.minor` String,
+    `user_agent.build` String,
+    `user_agent.os` String,
+    `user_agent.device` String,
+    `user_agent.major` String,
+    `user_agent.os_name` String,
+    `user_agent.name` String,
+    `user_agent_os_major` String,
+    `user_agent_patch` String,
+    `user_agent_os_minor` String,
+    `user_agent_minor` String,
+    `user_agent_build` String,
+    `user_agent_os` String,
+    `user_agent_device` String,
+    `user_agent_major` String,
+    `user_agent_os_name` String,
+    `user_agent_name` String,
+    `geocode` String,
+    `http_range` String
+)
+ENGINE = MergeTree()
+PARTITION BY Date
+ORDER BY (Date, logtime, remote_addr_int)
+TTL Date + toIntervalWeek(6)
+SETTINGS index_granularity = 8192;
+
+CREATE TABLE ngx_logs.logs_v1_buffer AS ngx_logs.logs_v1_2 ENGINE = Buffer(ngx_logs, logs_v1_2, 16, 10, 100, 10000, 1000000, 10000000, 100000000);
